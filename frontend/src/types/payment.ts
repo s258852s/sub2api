@@ -218,3 +218,9 @@ export interface DashboardStats {
   payment_methods: { type: string; amount: number; count: number }[]
   top_users: { user_id: number; email: string; amount: number }[]
 }
+
+export interface UsdtRateResponse {
+  cny_per_usdt: number
+  updated_at: string
+  source: string
+}

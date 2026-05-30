@@ -33,6 +33,16 @@
         </span>
       </button>
     </div>
+    <div v-if="hasUsdt && usdtRate && usdtRate > 0" class="mt-2 space-y-0.5">
+      <p class="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+        {{
+          usdtImpliedAmount && usdtImpliedAmount > 0
+            ? t('payment.usdtRateLine', { cny: usdtRate.toFixed(2), usdt: (usdtImpliedAmount / usdtRate).toFixed(2) })
+            : t('payment.usdtRateLineNoAmount', { cny: usdtRate.toFixed(2) })
+        }}
+      </p>
+      <p class="text-[10px] text-gray-500 dark:text-dark-400">{{ t('payment.usdtRateNote') }}</p>
+    </div>
   </div>
 </template>
 
@@ -55,6 +65,8 @@ export interface PaymentMethodOption {
 const props = defineProps<{
   methods: PaymentMethodOption[]
   selected: string
+  usdtRate?: number | null
+  usdtImpliedAmount?: number
 }>()
 
 const emit = defineEmits<{
@@ -79,6 +91,8 @@ const sortedMethods = computed(() => {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
   })
 })
+
+const hasUsdt = computed(() => props.methods.some(m => m.type === 'usdt' && m.available))
 
 function methodIcon(type: string): string {
   if (type.includes('alipay')) return METHOD_ICONS.alipay
