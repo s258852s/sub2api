@@ -60,7 +60,11 @@ func (c *usdtRateCache) Get(ctx context.Context) (usdtRateEntry, error) {
 	if err != nil {
 		return usdtRateEntry{}, err
 	}
-	return v.(usdtRateEntry), nil
+	entry, ok := v.(usdtRateEntry)
+	if !ok {
+		return usdtRateEntry{}, fmt.Errorf("usdt rate cache: unexpected value type %T", v)
+	}
+	return entry, nil
 }
 
 func fetchUSDTRateFromCoinGecko(ctx context.Context) (float64, error) {
