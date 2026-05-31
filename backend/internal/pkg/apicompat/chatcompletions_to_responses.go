@@ -74,6 +74,14 @@ func ChatCompletionsToResponses(req *ChatCompletionsRequest) (*ResponsesRequest,
 		out.Tools = convertChatToolsToResponses(req.Tools, req.Functions)
 	}
 
+	// parallel_tool_calls passes through verbatim. Both ChatCompletions and
+	// Responses define it as an optional boolean with the same semantics, so
+	// clients sending parallel_tool_calls: false (e.g. to force serial tool
+	// execution) get their intent honoured upstream instead of silently dropped.
+	if req.ParallelToolCalls != nil {
+		out.ParallelToolCalls = req.ParallelToolCalls
+	}
+
 	// tool_choice: already compatible format — pass through directly.
 	// Legacy function_call needs mapping.
 	if len(req.ToolChoice) > 0 {
