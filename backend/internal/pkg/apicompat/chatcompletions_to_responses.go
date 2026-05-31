@@ -74,14 +74,6 @@ func ChatCompletionsToResponses(req *ChatCompletionsRequest) (*ResponsesRequest,
 		out.Tools = convertChatToolsToResponses(req.Tools, req.Functions)
 	}
 
-	// parallel_tool_calls passes through verbatim. Both ChatCompletions and
-	// Responses define it as an optional boolean with the same semantics, so
-	// clients sending parallel_tool_calls: false (e.g. to force serial tool
-	// execution) get their intent honoured upstream instead of silently dropped.
-	if req.ParallelToolCalls != nil {
-		out.ParallelToolCalls = req.ParallelToolCalls
-	}
-
 	// tool_choice: already compatible format — pass through directly.
 	// Legacy function_call needs mapping.
 	if len(req.ToolChoice) > 0 {
@@ -126,13 +118,6 @@ func chatMessageToResponsesItems(m ChatMessage) ([]ResponsesInputItem, error) {
 	case "function":
 		return chatFunctionToResponses(m)
 	default:
-		// Includes "developer" — reverted from a brief experiment that mapped
-		// it to system, because the third-party behaviour probe degraded
-		// noticeably after the change. The o-series successor semantics are
-		// real per spec, but the downstream ChatGPT-OAuth path appears to
-		// produce different outputs depending on how the role token is wired,
-		// so until we have a model-aware route we keep the historical
-		// "fall through to user" behaviour.
 		return chatUserToResponses(m)
 	}
 }
@@ -383,7 +368,6 @@ func convertChatContentPartsToResponses(parts []ChatContentPart) []ResponsesCont
 				responseParts = append(responseParts, ResponsesContentPart{
 					Type:     "input_image",
 					ImageURL: p.ImageURL.URL,
-					Detail:   p.ImageURL.Detail,
 				})
 			}
 		}

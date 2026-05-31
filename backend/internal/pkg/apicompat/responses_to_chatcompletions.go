@@ -1,7 +1,6 @@
 package apicompat
 
 import (
-	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -9,18 +8,6 @@ import (
 	"strings"
 	"time"
 )
-
-// systemFingerprintFor returns an OpenAI-style `fp_xxxxxxxxxx` system
-// fingerprint stable per model. Used as a fallback when the upstream response
-// does not carry one, so SDK clients that key cache lookups by fingerprint
-// still see a consistent value for the same model.
-func systemFingerprintFor(model string) string {
-	if model == "" {
-		return ""
-	}
-	sum := md5.Sum([]byte("sub2api:" + model))
-	return "fp_" + hex.EncodeToString(sum[:5])
-}
 
 // ---------------------------------------------------------------------------
 // Non-streaming: ResponsesResponse → ChatCompletionsResponse
@@ -35,16 +22,11 @@ func ResponsesToChatCompletions(resp *ResponsesResponse, model string) *ChatComp
 		id = generateChatCmplID()
 	}
 
-	fingerprint := resp.SystemFingerprint
-	if fingerprint == "" {
-		fingerprint = systemFingerprintFor(model)
-	}
 	out := &ChatCompletionsResponse{
-		ID:                id,
-		Object:            "chat.completion",
-		Created:           time.Now().Unix(),
-		Model:             model,
-		SystemFingerprint: fingerprint,
+		ID:      id,
+		Object:  "chat.completion",
+		Created: time.Now().Unix(),
+		Model:   model,
 	}
 
 	var contentText string
@@ -130,7 +112,6 @@ func responsesStatusToChatFinishReason(status string, details *ResponsesIncomple
 type ResponsesEventToChatState struct {
 	ID                     string
 	Model                  string
-	SystemFingerprint      string
 	Created                int64
 	SentRole               bool
 	SawToolCall            bool
@@ -226,12 +207,6 @@ func resToChatHandleCreated(evt *ResponsesStreamEvent, state *ResponsesEventToCh
 		if state.Model == "" && evt.Response.Model != "" {
 			state.Model = evt.Response.Model
 		}
-		if state.SystemFingerprint == "" && evt.Response.SystemFingerprint != "" {
-			state.SystemFingerprint = evt.Response.SystemFingerprint
-		}
-	}
-	if state.SystemFingerprint == "" && state.Model != "" {
-		state.SystemFingerprint = systemFingerprintFor(state.Model)
 	}
 	// Emit the role chunk.
 	if state.SentRole {
@@ -398,11 +373,10 @@ func completionDetailsFromResponses(src *ResponsesOutputTokensDetails) *ChatToke
 
 func makeChatDeltaChunk(state *ResponsesEventToChatState, delta ChatDelta) ChatCompletionsChunk {
 	return ChatCompletionsChunk{
-		ID:                state.ID,
-		Object:            "chat.completion.chunk",
-		Created:           state.Created,
-		Model:             state.Model,
-		SystemFingerprint: state.SystemFingerprint,
+		ID:      state.ID,
+		Object:  "chat.completion.chunk",
+		Created: state.Created,
+		Model:   state.Model,
 		Choices: []ChatChunkChoice{{
 			Index:        0,
 			Delta:        delta,
@@ -414,11 +388,10 @@ func makeChatDeltaChunk(state *ResponsesEventToChatState, delta ChatDelta) ChatC
 func makeChatFinishChunk(state *ResponsesEventToChatState, finishReason string) ChatCompletionsChunk {
 	empty := ""
 	return ChatCompletionsChunk{
-		ID:                state.ID,
-		Object:            "chat.completion.chunk",
-		Created:           state.Created,
-		Model:             state.Model,
-		SystemFingerprint: state.SystemFingerprint,
+		ID:      state.ID,
+		Object:  "chat.completion.chunk",
+		Created: state.Created,
+		Model:   state.Model,
 		Choices: []ChatChunkChoice{{
 			Index:        0,
 			Delta:        ChatDelta{Content: &empty},
