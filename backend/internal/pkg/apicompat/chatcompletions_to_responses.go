@@ -115,9 +115,7 @@ func convertChatMessagesToResponsesInput(msgs []ChatMessage) ([]ResponsesInputIt
 // ResponsesInputItem values.
 func chatMessageToResponsesItems(m ChatMessage) ([]ResponsesInputItem, error) {
 	switch m.Role {
-	case "system", "developer":
-		// developer is the OpenAI o-series successor to system; both convey
-		// model-facing instructions, so map them to a Responses system item.
+	case "system":
 		return chatSystemToResponses(m)
 	case "user":
 		return chatUserToResponses(m)
@@ -128,6 +126,13 @@ func chatMessageToResponsesItems(m ChatMessage) ([]ResponsesInputItem, error) {
 	case "function":
 		return chatFunctionToResponses(m)
 	default:
+		// Includes "developer" — reverted from a brief experiment that mapped
+		// it to system, because the third-party behaviour probe degraded
+		// noticeably after the change. The o-series successor semantics are
+		// real per spec, but the downstream ChatGPT-OAuth path appears to
+		// produce different outputs depending on how the role token is wired,
+		// so until we have a model-aware route we keep the historical
+		// "fall through to user" behaviour.
 		return chatUserToResponses(m)
 	}
 }
