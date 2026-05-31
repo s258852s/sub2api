@@ -115,7 +115,9 @@ func convertChatMessagesToResponsesInput(msgs []ChatMessage) ([]ResponsesInputIt
 // ResponsesInputItem values.
 func chatMessageToResponsesItems(m ChatMessage) ([]ResponsesInputItem, error) {
 	switch m.Role {
-	case "system":
+	case "system", "developer":
+		// developer is the OpenAI o-series successor to system; both convey
+		// model-facing instructions, so map them to a Responses system item.
 		return chatSystemToResponses(m)
 	case "user":
 		return chatUserToResponses(m)
@@ -376,6 +378,7 @@ func convertChatContentPartsToResponses(parts []ChatContentPart) []ResponsesCont
 				responseParts = append(responseParts, ResponsesContentPart{
 					Type:     "input_image",
 					ImageURL: p.ImageURL.URL,
+					Detail:   p.ImageURL.Detail,
 				})
 			}
 		}

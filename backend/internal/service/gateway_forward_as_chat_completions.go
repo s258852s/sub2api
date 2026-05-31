@@ -490,12 +490,22 @@ func (s *GatewayService) handleCCStreamingFromAnthropic(
 }
 
 // writeGatewayCCError writes an error in OpenAI Chat Completions format for
-// the Anthropic-upstream CC forwarding path.
+// the Anthropic-upstream CC forwarding path. Emits the full OpenAI error
+// envelope (message + type + code + param) so SDK clients can drive their
+// retry/backoff logic off `code` the way they do against the real platform.
+// The two-arg form (errType, message) defaults code to errType and leaves
+// param null, which matches OpenAI's behaviour for generic server errors.
 func writeGatewayCCError(c *gin.Context, statusCode int, errType, message string) {
+	writeGatewayCCErrorFull(c, statusCode, errType, errType, message, nil)
+}
+
+func writeGatewayCCErrorFull(c *gin.Context, statusCode int, errType, code, message string, param *string) {
 	c.JSON(statusCode, gin.H{
 		"error": gin.H{
-			"type":    errType,
 			"message": message,
+			"type":    errType,
+			"code":    code,
+			"param":   param,
 		},
 	})
 }

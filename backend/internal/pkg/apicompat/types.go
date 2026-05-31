@@ -244,6 +244,7 @@ type ResponsesContentPart struct {
 	Type     string `json:"type"` // "input_text" | "output_text" | "input_image"
 	Text     string `json:"text,omitempty"`
 	ImageURL string `json:"image_url,omitempty"` // data URI for input_image
+	Detail   string `json:"detail,omitempty"`    // "auto" | "low" | "high" — applies to input_image
 }
 
 // ResponsesTool describes a tool in the Responses API.
@@ -257,12 +258,13 @@ type ResponsesTool struct {
 
 // ResponsesResponse is the non-streaming response from POST /v1/responses.
 type ResponsesResponse struct {
-	ID     string            `json:"id"`
-	Object string            `json:"object"` // "response"
-	Model  string            `json:"model"`
-	Status string            `json:"status"` // "completed" | "incomplete" | "failed"
-	Output []ResponsesOutput `json:"output"`
-	Usage  *ResponsesUsage   `json:"usage,omitempty"`
+	ID                string            `json:"id"`
+	Object            string            `json:"object"` // "response"
+	Model             string            `json:"model"`
+	Status            string            `json:"status"` // "completed" | "incomplete" | "failed"
+	Output            []ResponsesOutput `json:"output"`
+	Usage             *ResponsesUsage   `json:"usage,omitempty"`
+	SystemFingerprint string            `json:"system_fingerprint,omitempty"`
 
 	// incomplete_details is present when status="incomplete"
 	IncompleteDetails *ResponsesIncompleteDetails `json:"incomplete_details,omitempty"`
@@ -435,6 +437,20 @@ type ChatCompletionsRequest struct {
 	ReasoningEffort     string             `json:"reasoning_effort,omitempty"` // "low" | "medium" | "high" | "xhigh"
 	ServiceTier         string             `json:"service_tier,omitempty"`
 	Stop                json.RawMessage    `json:"stop,omitempty"` // string or []string
+
+	// Additional OpenAI ChatCompletions fields kept in the struct so they parse
+	// cleanly from client requests instead of being silently dropped. Most are
+	// surface-only passthrough today; response_format is the candidate for
+	// future conversion to Responses API text.format.
+	ResponseFormat   json.RawMessage `json:"response_format,omitempty"`
+	Seed             *int            `json:"seed,omitempty"`
+	N                *int            `json:"n,omitempty"`
+	Logprobs         *bool           `json:"logprobs,omitempty"`
+	TopLogprobs      *int            `json:"top_logprobs,omitempty"`
+	PresencePenalty  *float64        `json:"presence_penalty,omitempty"`
+	FrequencyPenalty *float64        `json:"frequency_penalty,omitempty"`
+	LogitBias        json.RawMessage `json:"logit_bias,omitempty"`
+	User             string          `json:"user,omitempty"`
 
 	// Legacy function calling (deprecated but still supported)
 	Functions    []ChatFunction  `json:"functions,omitempty"`
